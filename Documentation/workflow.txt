@@ -1,0 +1,71 @@
+V1:
+I tried a normal random forest regressor model on the cleaned dataset as specified above without any
+data cleaning or manipulation and got the following results:
+
+test score: 0.5639941486914555:  near 50% score
+MAE: 2.3805787476280837: Predicts position with an error of 2-3 places on average
+
+Ive come to realise after getting recommended by gemini that currntly we are using data from 2023
+to predict race results for 2012 which will not be accurate obviously. So the train data should be based
+on some previous year data and the test data on the recent years or so.
+So now for the training set: Races before 2022 and test set: Races in and after 2022.
+
+V2:
+I tried a normal random forest regressor now on the filtered dataset based on the year and got the following result:
+
+test score: 0.5310974698056856
+MAE: 2.732026374086936
+
+It turns out that now becuase the model has no knowledge of the recent year's performance it wont take into account
+that a driver or a team may enhance its performance. So we need to also filter that dataset to use the face that a driver 
+bad at this point may become good later on.
+We dropped the following features: "position", "resultId", "raceId", "year". but later on i decided to take back year as a feature
+because it may help with learning trends over time.
+
+V3:
+Adding rounds as a column because we need to calculate the avg poition of the driver in one entry for the last 3 races. 
+For that we'll need to sort the tuples in chronological order which cannot be done by circuitId because they are radndom foreign
+keys. However it can be done using the year and round columns.
+Added 4 new features: avg position of driver in last 3 races, avg position of driver in last 5 races, avg position of constructor
+in last 3 races, avg position of constructor in last 5 races. After this dropped the year column bacuse more local data is availible 
+now in each tuple to be trained on. FInal scores improved:
+
+test score: 0.6078553981108097
+MAE: 2.4715758591785417
+
+For now the feature importanc for the model is as follows:
+                      feature  importance
+2                        grid    0.413149
+7  constructor_avg_pos_last_5    0.186300
+6       driver_avg_pos_last_5    0.096717
+0                    driverId    0.075030
+5  constructor_avg_pos_last_3    0.062394
+3                   circuitId    0.060406
+1               constructorId    0.054938
+4       driver_avg_pos_last_3    0.051066
+
+As excpected logically the grid position must play the most important role in predicting a drivers finishing position.
+An interesting point to observe is that the model is now paying more importance to a drivers local past performance rather than just his identity.
+Let's try adding the last 3 and last 5 grid positions also for a driver.
+
+Improved the result slightly:
+
+test score: 0.6134855242956918 (increase of 0.01)
+MAE: 2.460502933780386
+                        feature  importance
+2                          grid    0.399316
+7    constructor_avg_pos_last_5    0.165921
+6         driver_avg_pos_last_5    0.080220
+0                      driverId    0.054049
+5    constructor_avg_pos_last_3    0.044583
+3                     circuitId    0.039675
+1                 constructorId    0.039186
+11  constructor_avg_grid_last_5    0.038310
+10       driver_avg_grid_last_5    0.036819
+9   constructor_avg_grid_last_3    0.036673
+4         driver_avg_pos_last_3    0.033331
+8        driver_avg_grid_last_3    0.031917
+
+The point is not about how big the newly implemented temporal feature individually is important, but rather how much do these 
+small features collectively improve the accuracy.
+Let's try to design a better metric to measure our performance than just the MAE.

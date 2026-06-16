@@ -35,15 +35,3 @@ So we are left with the following tables and features:
 
 1. Races: raceID, year, circuitID, 
 2. Results: resultID, raceID, driverID, constructorID, grid, position
-
-Phase 1:
-I tried a normal random forest regressor model on the cleaned dataset as specified above without any
-data cleaning or manipulation and got the following results:
-
-test score: 0.5639941486914555:  near 50% score
-MAE: 2.3805787476280837: Predicts position with an error of 2-3 places on average
-
-Ive come to realise after getting recommended by gemini that currntly we are using data from 2023
-to predict race results for 2012 which will not be accurate obviously. So the train data should be based
-on some previous year data and the test data on the recent years or so.
-So now for the training set: Races before 2022 and test set: Races in and after 2022.
