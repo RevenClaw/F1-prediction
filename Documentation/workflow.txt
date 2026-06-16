@@ -1,3 +1,8 @@
+ASSUMPTIONS:
+1.  For now the dataset has been filtered to remove all the DNFs, so if a driver will certainly finish then what would be a position
+    is our predictive statement.
+
+
 V1:
 I tried a normal random forest regressor model on the cleaned dataset as specified above without any
 data cleaning or manipulation and got the following results:
@@ -68,4 +73,54 @@ MAE: 2.460502933780386
 
 The point is not about how big the newly implemented temporal feature individually is important, but rather how much do these 
 small features collectively improve the accuracy.
-Let's try to design a better metric to measure our performance than just the MAE.
+Let's now try and establish some baseline parameters to test if our model beats basic reasoning yet. Though one domain specific baseline, which
+is the initial grid position is already satified having the highest imporance, we will look for some more such naive and domain baselines.
+
+......Baseline Statistics......
+Mean Baseline MAE: 4.555861655409195
+Median Baseline MAE: 4.740150880134116
+Grid Baseline MAE: 3.2087175188600168
+Driver Form Baseline MAE: 2.72689298686784
+
+As seen our model till now does a good job. It has on average a 50% better MAE than the naive baseline staistics.
+Also the driver form is the last 5 races avg position becuase it as such a high importance, the its MAE is closer to the overall test MSE
+than the naive baselines.
+
+Another thing to notice that the constructor last 5 position history is more important than driver's last 5 position history which makes sense
+becuase the car structure and configurations make play a huge role in the F1 race results.
+
+Now we are going to focus on examples that are incorrectly predicted by the model and analyze those.
+Key realization: On looking at the examples which contribute mmost to the errors, the very first tuple was of an austrian gp where 
+max verstappen started from pos 2 but ended at pos 20 because of a dnf but he was stil awarded a position and "status 17" which my model currently doesnot filter out.
+So it becomes a dataset discovery that we have to look into. Looking furthur into the status column from teh results table to further fuiter out incidents
+in a race.
+
+V4:
+Now keeping only those entries that have statusId=1 which means only finished tuples. Gives a significant improvement over the previous data:
+test score: 0.6170301809052453
+MAE: 2.0917011494252873 
+
+......Baseline Statistics......
+Mean Baseline MAE: 4.006233317791428
+Median Baseline MAE: 4.319540229885058
+Grid Baseline MAE: 2.952873563218391
+Driver Form Baseline MAE: 2.320536398467433
+
+......Feature Importances......
+                        feature  importance
+7    constructor_avg_pos_last_5    0.297207
+2                          grid    0.230021
+6         driver_avg_pos_last_5    0.107526
+5    constructor_avg_pos_last_3    0.054753
+0                      driverId    0.053096
+3                     circuitId    0.043051
+11  constructor_avg_grid_last_5    0.037399
+10       driver_avg_grid_last_5    0.037048
+1                 constructorId    0.036069
+9   constructor_avg_grid_last_3    0.035327
+4         driver_avg_pos_last_3    0.035160
+8        driver_avg_grid_last_3    0.033343
+
+One thing to note is that the constructor avg points now matter more than the grid position in the overall data. 
+The main thing is that there is a significant increase in the MAE which signifies that one of the main error causing factors were the disasters
+and unpredicable anomalies in the race leading to retirement of the driver.

@@ -1,3 +1,4 @@
+from pandas import errors
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
@@ -8,9 +9,12 @@ import os
 def load_data():
     races = pd.read_csv("data/raw/races.csv")
     results = pd.read_csv("data/raw/results.csv")
+    status = pd.read_csv("data/raw/status.csv")
     races = races[["raceId","year","round","circuitId"]]
-    results = results[["resultId","raceId","driverId","constructorId","grid","position"]]
+    results = results[["resultId","raceId","driverId","constructorId","grid","position","statusId"]]
+    results = results[results["statusId"] == 1]
     data = results.merge(races, on="raceId")
+    data = data.merge(status, on="statusId")
     data = data[data["position"] != "\\N"]
     data["position"] = data["position"].astype(int)
     data = data.sort_values(by=["year","round"]).reset_index(drop=True)
@@ -23,8 +27,8 @@ def process_data():
     test_data = data[data["year"] >= 2022]
     train_data.to_csv("data/processed/train_data.csv", index=False)
     test_data.to_csv("data/processed/test_data.csv", index=False)
-    print("Data processed successfully")
-    features_to_drop = ["position", "raceId", "resultId", "round", "year"]
+    print("Data processed successfully\n")
+    features_to_drop = ["position", "raceId", "resultId", "round", "year", "statusId", "status"]
 
     x_train = train_data.drop(columns = features_to_drop)
     y_train = train_data["position"]
@@ -72,16 +76,54 @@ def temporal_features(data):
 def random_forest(x_train, y_train, x_test, y_test):
     model = RandomForestRegressor()
     model.fit(x_train, y_train)
+    print("......Overall Test Results......")
     print("test score:", model.score(x_test, y_test))
     y_pred = model.predict(x_test)
     mae = mean_absolute_error(y_test, y_pred)
-    print("MAE:", mae)
+    print("MAE:", mae,"\n")
+
+
+    print("......Baseline Statistics......")
+
+    mean_val = y_train.mean()
+    y_pred_mean = np.full_like(y_test, mean_val, dtype=float)
+    mae_mean = mean_absolute_error(y_test, y_pred_mean)
+    print(f"Mean Baseline MAE: {mae_mean}")
+
+    median_val = y_train.median()
+    y_pred_median = np.full_like(y_test, median_val, dtype=float)
+    mae_median = mean_absolute_error(y_test, y_pred_median)
+    print(f"Median Baseline MAE: {mae_median}")
+
+    y_pred_grid = x_test["grid"]
+    mae_grid = mean_absolute_error(y_test, y_pred_grid)
+    print(f"Grid Baseline MAE: {mae_grid}")
+
+    y_pred_driver_form = x_test["driver_avg_pos_last_5"]
+    mae_driver_form = mean_absolute_error(y_test, y_pred_driver_form)
+    print(f"Driver Form Baseline MAE: {mae_driver_form}\n")
+
+    print("......Feature Importances......")
     importance_df = pd.DataFrame({
     "feature": x_train.columns,
     "importance": model.feature_importances_
     })
     importance_df = importance_df.sort_values("importance", ascending=False)
     print(importance_df)
+
+    errors = x_test.copy()
+    errors["actual"] = y_test
+    errors["predicted"] = y_pred
+    errors["abs_error"] = abs(errors["actual"] - errors["predicted"])
+
+    test_data = pd.read_csv("data/processed/test_data.csv")
+    errors["year"] = test_data["year"].values
+    errors["raceId"] = test_data["raceId"].values
+    errors["statusId"] = test_data["statusId"].values
+    errors["status"] = test_data["status"].values
+
+    errors.sort_values("abs_error", ascending=False).head(50).to_csv("data/processed/errors.csv", index=False)
+
 
 load_data()
 x_train, y_train, x_test, y_test = process_data()
