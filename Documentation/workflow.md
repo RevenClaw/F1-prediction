@@ -124,3 +124,18 @@ Driver Form Baseline MAE: 2.320536398467433
 One thing to note is that the constructor avg points now matter more than the grid position in the overall data. 
 The main thing is that there is a significant increase in the MAE which signifies that one of the main error causing factors were the disasters
 and unpredicable anomalies in the race leading to retirement of the driver.
+
+Plotted the graphs to get some info,  found some intersting insights in the the current model.
+
+
+<img src="scatter_rf_v4.png" alt="alt text" width="300"/>
+
+
+As we can observe the model hardly predicts over the position 12 and never predicts above 14, so it is interestingly very cautious about outliers, and has started acting like a gausian classifier prediciting more around the mean.
+(The error distribution also started following a gausian distribution.)
+Maybe it dosent predict over 14 because the training data was based on data before 2022 and in that period the overall grid did not have 20 drivers, but far less if we look back to the early 2000s.
+
+
+<img src="error_dist.png" alt="alt text" width="300"/>
+
+Here we can see that the error distribution is cenbtered around 0. This is a very good sign because the maximum frequency errors are around 0. Also the errors are not very large which signifies that the model is on average not very wrong in its predictions.

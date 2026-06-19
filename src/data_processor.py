@@ -5,6 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.ensemble import RandomForestRegressor
 from xgboost import XGBRegressor
 from sklearn.metrics import mean_absolute_error
+import matplotlib.pyplot as plt
 import os
 
 def load_data():
@@ -18,6 +19,7 @@ def load_data():
     data = data.merge(status, on="statusId")
     data = data[data["position"] != "\\N"]
     data["position"] = data["position"].astype(int)
+    data = data[data["year"] >= 2000]
     data = data.sort_values(by=["year","round"]).reset_index(drop=True)
     data.to_csv("data/processed/cleaned_data.csv", index=False)
 
@@ -92,13 +94,21 @@ def temporal_features(data):
     return data
 
 def random_forest(x_train, y_train, x_test, y_test):
-    model = RandomForestRegressor(n_estimators=500, random_state=42)
+    model = RandomForestRegressor(n_estimators=500,
+    max_depth=12,
+    min_samples_leaf=5,
+    random_state=42,
+    n_jobs=-1)
     model.fit(x_train, y_train)
     print("......Overall Test Results (Random Forest)......")
     print("test score:", model.score(x_test, y_test))
     y_pred = model.predict(x_test)
     mae = mean_absolute_error(y_test, y_pred)
-    print("MAE:", mae,"\n")
+    print("Test MAE:", mae)
+    
+    y_train_pred = model.predict(x_train)
+    train_mae = mean_absolute_error(y_train, y_train_pred)
+    print("Train MAE:", train_mae, "\n")
 
 
     print("......Baseline Statistics......")
@@ -141,6 +151,7 @@ def random_forest(x_train, y_train, x_test, y_test):
     errors["status"] = test_data["status"].values
 
     errors.sort_values("abs_error", ascending=False).head(50).to_csv("data/processed/errors.csv", index=False)
+    make_plots_rf(y_test, y_pred)
 
 
 def xgboost(x_train, y_train, x_test, y_test):
@@ -157,7 +168,11 @@ def xgboost(x_train, y_train, x_test, y_test):
     print("test score:", model.score(x_test, y_test))
     y_pred = model.predict(x_test)
     mae = mean_absolute_error(y_test, y_pred)
-    print("MAE:", mae,"\n")
+    print("Test MAE:", mae)
+    
+    y_train_pred = model.predict(x_train)
+    train_mae = mean_absolute_error(y_train, y_train_pred)
+    print("Train MAE:", train_mae, "\n")
 
 
     print("......Baseline Statistics......")
@@ -201,11 +216,33 @@ def xgboost(x_train, y_train, x_test, y_test):
 
     errors.sort_values("abs_error", ascending=False).head(50).to_csv("data/processed/errors.csv", index=False)
 
+def make_plots_rf(y_test, y_pred):
+    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
+
+    # Scatter plot
+    axes[0].scatter(y_test, y_pred, alpha=0.5)
+    axes[0].set_xlabel("Actual Position")
+    axes[0].set_ylabel("Predicted Position")
+    axes[0].set_title("Actual vs Predicted Position (Random Forest)")
+
+    # Error distribution histogram
+    errors = y_test - y_pred
+    axes[1].hist(errors, bins=50)
+    axes[1].set_xlabel("Error")
+    axes[1].set_ylabel("Frequency")
+    axes[1].set_title("Error Distribution (Random Forest)")
+
+    plt.tight_layout()
+    plt.show()
+
+    
 
 load_data()
 x_train, y_train, x_test, y_test = process_data()
 print("--- RUNNING RANDOM FOREST ---")
 random_forest(x_train, y_train, x_test, y_test)
-print("\n--- RUNNING XGBOOST ---")
-xgboost(x_train, y_train, x_test, y_test)
+# print("\n--- RUNNING XGBOOST ---")
+# xgboost(x_train, y_train, x_test, y_test)
 print(os.getcwd())
+print(y_train.describe())
+
