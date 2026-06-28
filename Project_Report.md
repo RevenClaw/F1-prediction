@@ -132,6 +132,8 @@ Using **3-Fold Time-Split Cross-Validation** via `RandomizedSearchCV` on the tra
 
 XGBoost achieved the best generalization and lowest error rate by using gradient boosting to sequentially correct residual errors, achieving an average finish prediction accuracy within **1.95 positions**.
 
+<img src="Documentation/scatter_error_xgboost.png" alt="XGBoost Actual vs Predicted and Error Distribution" width="700"/>
+
 ---
 
 ## Feature Importances (XGBoost Final)

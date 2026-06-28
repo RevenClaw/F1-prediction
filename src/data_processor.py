@@ -219,7 +219,7 @@ def random_forest(x_train, y_train, x_test, y_test):
     errors["status"] = test_data["status"].values
 
     errors.sort_values("abs_error", ascending=False).head(50).to_csv("data/processed/errors.csv", index=False)
-    make_plots_rf(y_test, y_pred)
+    make_plots(y_test, y_pred, "Random Forest")
 
 
 def xgboost(x_train, y_train, x_test, y_test):
@@ -296,24 +296,32 @@ def xgboost(x_train, y_train, x_test, y_test):
     errors["status"] = test_data["status"].values
 
     errors.sort_values("abs_error", ascending=False).head(50).to_csv("data/processed/errors.csv", index=False)
+    make_plots(y_test, y_pred, "XGBoost")
 
-def make_plots_rf(y_test, y_pred):
+def make_plots(y_test, y_pred, model_name):
     fig, axes = plt.subplots(1, 2, figsize=(14, 5))
 
+    # Determine color scheme based on model name
+    color = 'coral' if 'XGBoost' in model_name else 'royalblue'
+
     # Scatter plot
-    axes[0].scatter(y_test, y_pred, alpha=0.5)
+    axes[0].scatter(y_test, y_pred, alpha=0.5, color=color)
     axes[0].set_xlabel("Actual Position")
     axes[0].set_ylabel("Predicted Position")
-    axes[0].set_title("Actual vs Predicted Position (Random Forest)")
+    axes[0].set_title(f"Actual vs Predicted Position ({model_name})")
 
     # Error distribution histogram
     errors = y_test - y_pred
-    axes[1].hist(errors, bins=50)
+    axes[1].hist(errors, bins=50, color=color, edgecolor='black', alpha=0.8)
     axes[1].set_xlabel("Error")
     axes[1].set_ylabel("Frequency")
-    axes[1].set_title("Error Distribution (Random Forest)")
+    axes[1].set_title(f"Error Distribution ({model_name})")
 
     plt.tight_layout()
+    # Save plots to Documentation folder for project reporting
+    filename = f"Documentation/scatter_error_{model_name.lower().replace(' ', '_')}.png"
+    plt.savefig(filename, dpi=300)
+    print(f"Saved plot to {filename}")
     plt.show()
 
     
