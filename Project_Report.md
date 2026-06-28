@@ -39,7 +39,7 @@ To validate that our models outperform simple heuristic reasoning, we compare th
 *   **Grid Baseline MAE:** `2.9529` (Predicting that the finishing position equals the starting grid position)
 *   **Driver Form Baseline MAE:** `2.3205` (Predicting that the finishing position equals the average of the last 5 races)
 
-Our tuned **XGBoost model (Test MAE: 1.9538)** outperforms the best heuristic benchmark (Driver Form) by **15.8%** and the Grid baseline by **33.8%**.
+The tuned **XGBoost model (Test MAE: 1.9538)** outperforms the best heuristic benchmark (Driver Form) by **15.8%** and the Grid baseline by **33.8%**.
 
 ---
 
@@ -79,20 +79,20 @@ DNFs (Did Not Finish) due to mechanical failures, collisions, or disqualificatio
 ### Visual Diagnostics
 When plotting the predicted vs. actual finishing positions, we observed that the model's predictions were heavily constrained, rarely predicting finishes below 12th place and never predicting finishes worse than 14th.
 
-<img src="scatter_rf_v4.png" alt="Actual vs Predicted Scatter Plot" width="350"/>
-<img src="error_dist.png" alt="Error Distribution" width="350"/>
+<img src="Documentation/scatter_rf_v4.png" alt="Actual vs Predicted Scatter Plot" width="350"/>
+<img src="Documentation/error_dist.png" alt="Error Distribution" width="350"/>
 
 This behavior is a consequence of **regression to the mean** in ensemble regression models. Because tree-based regressors (like Random Forest) average the target values of samples falling into the same terminal leaf node, predictions are pulled towards the average finishing position. When combined with target label imbalance, where the training dataset is heavily skewed towards top finishes, the model behaves conservatively and avoids predicting extreme lower-midfield or backmarker positions.
 
-<img src="finish_v4.png" alt="Target Skewness" width="350"/>
+<img src="Documentation/finish_v4.png" alt="Target Skewness" width="350"/>
 
 ### Historical Grid Size Variations
 Further investigation revealed that grid sizes were much larger in the early years of the dataset (sometimes up to 30+ cars), whereas the modern era (post-2010) has maintained a stable grid size of 20–22 cars. High-ranking positions (1st–10th) exist in every season, but low-ranking positions (15th–30th) only appeared in older years, skewing the overall target distribution.
 
 Prior to 2000, grid sizes in F1 varied widely, and the distribution of finishing positions was highly skewed. Since 2010, grid sizes have stabilized at 20–22 cars. Restricting our training data to a window starting in 2000 (the optimal training window) aligned the target distributions between the training and test sets. It eliminated historical noise from oversized grids and provided the model with a more consistent distribution of finishing positions, leading to much better generalization.
 
-<img src="finish_raw.png" alt="Raw Finish Positions Distribution" width="350"/>
-<img src="finish_2010.png" alt="Post-2010 Finish Positions Distribution" width="350"/>
+<img src="Documentation/finish_raw.png" alt="Raw Finish Positions Distribution" width="350"/>
+<img src="Documentation/finish_2010.png" alt="Post-2010 Finish Positions Distribution" width="350"/>
 
 ---
 
